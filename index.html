@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOLÉE — 사전예약</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F4EFE6;
+    --cream-deep:#E9E1D2;
+    --navy:#1C2B45;
+    --navy-soft:#2C3C5A;
+    --olive:#45512F;
+    --line:#C9BEA9;
+    --text:#24241F;
+    --text-soft:#6E6A5F;
+    --white:#FFFFFF;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    height:100%;
+    font-family:'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+    background:var(--cream);
+    color:var(--text);
+    overflow:hidden;
+  }
+  ::-webkit-scrollbar{ display:none; }
+
+  #track{
+    height:100vh;
+    width:100vw;
+    display:flex;
+    flex-direction:row;
+    scroll-snap-type:x mandatory;
+    overflow-x:scroll;
+    overflow-y:hidden;
+    scroll-behavior:smooth;
+  }
+  .panel{
+    position:relative;
+    width:100vw;
+    height:100vh;
+    flex-shrink:0;
+    scroll-snap-align:start;
+    overflow:hidden;
+  }
+
+  /* ===== top fixed brand bar ===== */
+  .brandbar{
+    position:fixed;
+    top:0; left:0; right:0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:28px 44px;
+    z-index:50;
+    pointer-events:none;
+    mix-blend-mode:difference;
+  }
+  .brandbar .logo{
+    color:#fff;
+    font-size:20px;
+    letter-spacing:0.28em;
+    font-weight:700;
+  }
+  .brandbar .sectionlabel{
+    color:#fff;
+    font-size:12px;
+    letter-spacing:0.3em;
+    font-weight:500;
+    opacity:0.85;
+  }
+
+  /* ===== progress / nav ===== */
+  .nav{
+    position:fixed;
+    bottom:30px; left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    gap:10px;
+    z-index:50;
+  }
+  .nav button{
+    width:8px; height:8px;
+    border-radius:50%;
+    border:1px solid var(--navy);
+    background:transparent;
+    cursor:pointer;
+    padding:0;
+    transition:all .25s;
+  }
+  .nav button.active{
+    background:var(--navy);
+    width:22px;
+    border-radius:5px;
+  }
+
+  .arrow{
+    position:fixed;
+    bottom:26px;
+    width:40px; height:40px;
+    border-radius:50%;
+    border:1px solid var(--navy);
+    background:rgba(255,255,255,0.6);
+    backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    z-index:50;
+    color:var(--navy);
+    font-size:16px;
+    transition:background .2s;
+  }
+  .arrow:hover{ background:var(--navy); color:#fff; }
+  #prevBtn{ right:84px; }
+  #nextBtn{ right:30px; }
+
+  .scrollhint{
+    position:fixed;
+    bottom:34px; left:40px;
+    z-index:50;
+    font-size:11px;
+    letter-spacing:0.2em;
+    color:var(--text-soft);
+    writing-mode:horizontal-tb;
+  }
+
+  /* ========== 1. MAIN ========== */
+  .panel-main{
+    background:#000;
+  }
+  .panel-main img{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+    object-position:60% center;
+    opacity:0.92;
+  }
+  .panel-main::after{
+    content:"";
+    position:absolute; inset:0;
+    background:linear-gradient(90deg, rgba(10,14,24,0.72) 0%, rgba(10,14,24,0.38) 36%, rgba(10,14,24,0.02) 62%);
+  }
+  .main-content{
+    position:absolute;
+    left:7%; top:0; bottom:0;
+    display:flex; flex-direction:column; justify-content:center;
+    z-index:2;
+    max-width:560px;
+  }
+  .eyebrow{
+    color:#E7DFCB;
+    font-size:13px;
+    letter-spacing:0.35em;
+    font-weight:500;
+    margin-bottom:22px;
+  }
+  .maintitle{
+    color:#fff;
+    font-size:52px;
+    font-weight:700;
+    line-height:1.28;
+    letter-spacing:-0.01em;
+    margin-bottom:26px;
+  }
+  .maindesc{
+    color:#EDE7D9;
+    font-size:16px;
+    line-height:1.8;
+    font-weight:300;
+    margin-bottom:40px;
+  }
+  .dday{
+    display:inline-flex;
+    align-items:center;
+    gap:12px;
+    padding:10px 20px;
+    border:1px solid rgba(255,255,255,0.4);
+    border-radius:30px;
+    color:#fff;
+    font-size:13px;
+    letter-spacing:0.08em;
+    margin-bottom:40px;
+    width:fit-content;
+  }
+  .dday b{ color:#F3D98B; font-weight:700; font-size:14px; }
+  .cta{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    background:#fff;
+    color:var(--navy);
+    padding:17px 34px;
+    border-radius:4px;
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    width:fit-content;
+    cursor:pointer;
+    border:none;
+    transition:transform .2s, background .2s;
+  }
+  .cta:hover{ background:#F3D98B; transform:translateX(4px); }
+
+  /* ========== 2. COLLECTION ========== */
+  .panel-collection{
+    background:#000;
+  }
+  .coll-bg{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+  }
+  .panel-collection::after{
+    content:"";
+    position:absolute; inset:0;
+    z-index:1;
+    background:linear-gradient(90deg, rgba(12,16,26,0.66) 0%, rgba(12,16,26,0.38) 30%, rgba(12,16,26,0) 56%);
+  }
+  .coll-text{
+    position:absolute;
+    left:7%; top:0; bottom:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    z-index:2;
+    max-width:460px;
+  }
+  .coll-text .tag{ color:#E7DFCB; }
+  .coll-text .sectiontitle{ color:#fff; }
+  .coll-text .sectiondesc{ color:#EDE7D9; }
+  .coll-text .swatch-label span{ color:#C9CEDC; }
+  .tag{
+    display:inline-block;
+    font-size:12px;
+    letter-spacing:0.3em;
+    color:var(--olive);
+    font-weight:600;
+    margin-bottom:18px;
+  }
+  .sectiontitle{
+    font-size:36px;
+    font-weight:700;
+    line-height:1.4;
+    margin-bottom:22px;
+    color:var(--navy);
+  }
+  .sectiondesc{
+    font-size:15px;
+    line-height:1.9;
+    color:var(--text-soft);
+    font-weight:300;
+    margin-bottom:34px;
+  }
+  .swatches{ display:flex; gap:14px; margin-bottom:10px; }
+  .swatch{
+    width:46px; height:46px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,0.4);
+    box-shadow:0 2px 6px rgba(0,0,0,0.2);
+    padding:0;
+    cursor:pointer;
+    transition:transform .2s, box-shadow .2s;
+  }
+  .swatch:hover, .swatch:focus-visible{
+    transform:scale(1.12);
+    box-shadow:0 4px 12px rgba(0,0,0,0.3);
+    outline:none;
+  }
+  .swatch-label{ display:flex; gap:14px; margin-top:10px; }
+  .swatch-label span{ width:46px; text-align:center; font-size:11px; color:var(--text-soft); letter-spacing:0.02em; }
+
+  /* ===== color swatch modal ===== */
+  .color-modal{
+    position:fixed; inset:0;
+    z-index:100;
+    display:none;
+    align-items:center;
+    justify-content:center;
+  }
+  .color-modal.open{ display:flex; }
+  .color-modal-backdrop{
+    position:absolute; inset:0;
+    background:rgba(12,16,26,0.72);
+    backdrop-filter:blur(4px);
+  }
+  .color-modal-card{
+    position:relative;
+    z-index:1;
+    background:#fff;
+    border-radius:10px;
+    padding:28px;
+    max-width:min(640px, 88vw);
+    max-height:88vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    box-shadow:0 30px 70px rgba(0,0,0,0.35);
+    animation:modalPop .22s ease;
+  }
+  @keyframes modalPop{
+    from{ opacity:0; transform:scale(0.96); }
+    to{ opacity:1; transform:scale(1); }
+  }
+  .color-modal-label{
+    font-size:12px;
+    letter-spacing:0.3em;
+    font-weight:700;
+    color:var(--olive);
+    margin-bottom:14px;
+  }
+  .color-modal-card img{
+    max-width:100%;
+    max-height:72vh;
+    object-fit:contain;
+    border-radius:6px;
+  }
+  .color-modal-close{
+    position:absolute;
+    top:10px; right:14px;
+    background:none;
+    border:none;
+    font-size:28px;
+    line-height:1;
+    color:var(--text-soft);
+    cursor:pointer;
+    padding:4px 8px;
+  }
+  .color-modal-close:hover{ color:var(--navy); }
+
+  /* ========== 3. DETAIL ========== */
+  .panel-detail{
+    background:#000;
+  }
+  .detail-bg{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+  }
+  .panel-detail::after{
+    content:"";
+    position:absolute; inset:0;
+    z-index:1;
+    background:linear-gradient(90deg, rgba(12,16,26,0.58) 0%, rgba(12,16,26,0.28) 22%, rgba(12,16,26,0) 38%);
+  }
+  .detail-heading{
+    position:absolute;
+    left:6%; bottom:9%;
+    z-index:2;
+    max-width:360px;
+  }
+  .detail-heading .tag{ color:#E7DFCB; }
+  .detail-heading .sectiontitle{ color:#fff; margin-bottom:0; }
+  .img-caption{
+    position:absolute;
+    z-index:2;
+    text-align:center;
+    background:rgba(255,255,255,0.88);
+    backdrop-filter:blur(6px);
+    border-radius:6px;
+    box-shadow:0 8px 20px rgba(28,43,69,0.15);
+  }
+  .img-caption .cap-n{
+    font-size:10px;
+    color:var(--olive);
+    font-weight:700;
+    letter-spacing:0.1em;
+    display:block;
+    margin-bottom:4px;
+  }
+  .img-caption .cap-title{ font-size:13px; font-weight:700; color:var(--navy); margin-bottom:3px; }
+  .img-caption .cap-desc{ font-size:11px; color:var(--text-soft); line-height:1.5; font-weight:300; }
+  .detail-caption{
+    transform:translate(-50%, 0);
+    width:196px;
+    padding:8px 10px;
+  }
+
+  /* ========== 4. CHECKPOINT ========== */
+  .panel-check{
+    background:var(--cream);
+  }
+  .check-bg{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+  }
+  .check-heading{
+    position:absolute;
+    left:6%; top:9%;
+    z-index:2;
+    max-width:380px;
+  }
+  .check-caption{
+    transform:translate(-50%, 0) translateY(14px);
+    width:172px;
+    padding:12px 10px;
+    opacity:0;
+    transition:opacity .5s ease, transform .5s ease, box-shadow .3s ease, border-color .3s ease, background .3s ease;
+    border:1px solid transparent;
+  }
+  .check-caption .cap-title{ font-size:14px; }
+  .check-caption.active{
+    border-color:var(--navy);
+    box-shadow:0 10px 22px rgba(28,43,69,0.2);
+    background:rgba(255,255,255,0.97);
+  }
+  .panel-check.cp-visible .check-caption{
+    opacity:1;
+    transform:translate(-50%, 0) translateY(0);
+  }
+
+  .check-hotspot{
+    position:absolute;
+    z-index:3;
+    border-radius:50%;
+    cursor:pointer;
+    border:1.5px solid transparent;
+    box-shadow:0 0 0 0 rgba(28,43,69,0);
+    opacity:0;
+    transform:translate(-50%, -50%) translateY(14px) scale(0.92);
+    transition:opacity .5s ease, border-color .25s ease, box-shadow .25s ease,
+               transform .3s cubic-bezier(.34,1.3,.64,1);
+  }
+  .panel-check.cp-visible .check-hotspot{
+    opacity:1;
+    transform:translate(-50%, -50%) translateY(0) scale(1);
+  }
+  .check-hotspot:hover,
+  .check-hotspot.active{
+    border-color:rgba(28,43,69,0.45);
+    box-shadow:0 0 0 1.5px rgba(28,43,69,0.08);
+    transform:translate(-50%, -50%) translateY(0) scale(1.015);
+  }
+  .cp-delay-1{ transition-delay:0ms; }
+  .cp-delay-2{ transition-delay:90ms; }
+  .cp-delay-3{ transition-delay:180ms; }
+  .cp-delay-4{ transition-delay:270ms; }
+
+  /* ========== 5. Q&A ========== */
+  .panel-qa{
+    background:var(--navy);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 8%;
+  }
+  .qa-wrap{ width:100%; max-width:980px; }
+  .qa-top{ text-align:center; margin-bottom:46px; }
+  .qa-top .tag{ color:#C9BEA9; }
+  .qa-top .sectiontitle{ color:#fff; }
+  .qa-item{
+    border-bottom:1px solid rgba(255,255,255,0.18);
+    padding:22px 4px;
+  }
+  .qa-q{
+    display:flex;
+    gap:16px;
+    align-items:baseline;
+    font-size:16px;
+    font-weight:600;
+    color:#fff;
+    margin-bottom:10px;
+  }
+  .qa-q .q-mark{ color:#F3D98B; font-size:15px; font-weight:700; }
+  .qa-a{
+    display:flex;
+    gap:16px;
+    align-items:flex-start;
+    font-size:14px;
+    color:#C9CEDC;
+    line-height:1.8;
+    font-weight:300;
+  }
+  .qa-a .a-mark{ color:#8891A6; font-size:14px; font-weight:700; }
+
+  /* ========== 6. RESERVATION FORM ========== */
+  .panel-form{
+    background:var(--cream);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .form-wrap{
+    width:100%;
+    max-width:460px;
+    text-align:center;
+    padding:0 24px;
+  }
+  .form-wrap .tag{ justify-content:center; display:inline-block; }
+  .form-wrap .sectiontitle{ font-size:30px; margin-bottom:14px; }
+  .form-wrap .sectiondesc{ margin-bottom:36px; }
+  .benefit-row{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-bottom:38px;
+  }
+  .benefit-chip{
+    border:1px solid var(--line);
+    border-radius:30px;
+    padding:8px 16px;
+    font-size:12px;
+    color:var(--navy);
+    font-weight:600;
+    letter-spacing:0.02em;
+  }
+  .benefit-chip.active{
+    background:var(--navy);
+    color:#fff;
+    border-color:var(--navy);
+  }
+  .field{ text-align:left; margin-bottom:16px; }
+  .field label{
+    display:block;
+    font-size:12px;
+    color:var(--text-soft);
+    letter-spacing:0.08em;
+    margin-bottom:8px;
+  }
+  .field input{
+    width:100%;
+    padding:15px 16px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:#fff;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--text);
+    outline:none;
+    transition:border-color .2s;
+  }
+  .field input:focus{ border-color:var(--navy); }
+  .submitbtn{
+    width:100%;
+    margin-top:14px;
+    padding:17px;
+    background:var(--navy);
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    font-size:15px;
+    font-weight:700;
+    letter-spacing:0.02em;
+    cursor:pointer;
+    transition:background .2s;
+  }
+  .submitbtn:hover{ background:#111c30; }
+  .formnote{
+    margin-top:18px;
+    font-size:11.5px;
+    color:var(--text-soft);
+    line-height:1.7;
+  }
+  .formsuccess{
+    display:none;
+    font-size:14px;
+    color:var(--navy);
+    font-weight:600;
+    margin-top:18px;
+  }
+</style>
+</head>
+<body>
+
+<div class="brandbar">
+  <div class="logo">VOLÉE</div>
+  <div class="sectionlabel" id="sectionLabel">01 / MAIN</div>
+</div>
+
+<div class="scrollhint">SCROLL &nbsp;→</div>
+<div class="nav" id="navDots"></div>
+<div class="arrow" id="prevBtn">←</div>
+<div class="arrow" id="nextBtn">→</div>
+
+<div id="track">
+
+  <!-- 1. MAIN -->
+  <section class="panel panel-main">
+    <img src="1.main.png" alt="VOLÉE 테니스웨어 메인 이미지">
+    <div class="main-content">
+      <div class="eyebrow">VOLÉE PRE-ORDER · NEW ARRIVAL</div>
+      <h1 class="maintitle">코트 위에서도,<br>일상 속에서도.</h1>
+      <p class="maindesc">과장 없는 핏과 차분한 컬러로 완성한 테니스 상하세트.<br>VOLÉE의 첫 번째 컬렉션을 가장 먼저 만나보세요.</p>
+      <div class="dday">사전예약 오픈까지 <b>D-7</b> · 선착 100인 30% 할인</div>
+      <button class="cta" onclick="goTo(5)">사전예약 신청하기 →</button>
+    </div>
+  </section>
+
+  <!-- 2. COLLECTION -->
+  <section class="panel panel-collection">
+    <img class="coll-bg" src="2.collection.png" alt="VOLÉE 컬렉션 3컬러">
+
+    <div class="coll-text">
+      <span class="tag">COLLECTION</span>
+      <h2 class="sectiontitle">하나의 핏,<br>세 가지 무드.</h2>
+      <p class="sectiondesc">같은 디자인에서 출발했지만 전혀 다른 분위기를 내는 3가지 컬러.
+      크림, 올리브, 네이비 — 코트 위에서도 데일리에서도 자연스럽게 녹아듭니다.</p>
+      <div class="swatches">
+        <button type="button" class="swatch" style="background:#EDE4D4;" data-color="cream.png" data-label="CREAM" aria-label="크림 컬러 보기"></button>
+        <button type="button" class="swatch" style="background:#45512F;" data-color="olive.png" data-label="OLIVE" aria-label="올리브 컬러 보기"></button>
+        <button type="button" class="swatch" style="background:#1C2B45;" data-color="navy.png" data-label="NAVY" aria-label="네이비 컬러 보기"></button>
+      </div>
+      <div class="swatch-label">
+        <span>CREAM</span>
+        <span>OLIVE</span>
+        <span>NAVY</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. DETAIL -->
+  <section class="panel panel-detail">
+    <img class="detail-bg" id="detailBg" src="3.detail.png" alt="VOLÉE 디테일 확대컷">
+
+    <div class="detail-heading">
+      <span class="tag">PRODUCT DETAIL</span>
+      <h2 class="sectiontitle">디테일이<br>완성도를 만든다.</h2>
+    </div>
+
+    <div class="img-caption detail-caption" data-fx="0.462" data-fy="0.478">
+      <span class="cap-n">01 · COLLAR</span>
+      <div class="cap-title">하프 집업 디테일</div>
+      <div class="cap-desc">넥 라인까지 이어지는 짚업 포인트</div>
+    </div>
+    <div class="img-caption detail-caption" data-fx="0.675" data-fy="0.478">
+      <span class="cap-n">02 · CUFF</span>
+      <div class="cap-title">포인트 라인 커프스</div>
+      <div class="cap-desc">소매 끝 네이비 라인 포인트</div>
+    </div>
+    <div class="img-caption detail-caption" data-fx="0.888" data-fy="0.478">
+      <span class="cap-n">03 · FABRIC</span>
+      <div class="cap-title">보아 플리스 원단</div>
+      <div class="cap-desc">포근하고 가벼운 터치감</div>
+    </div>
+    <div class="img-caption detail-caption" data-fx="0.462" data-fy="0.84">
+      <span class="cap-n">04 · WAISTBAND</span>
+      <div class="cap-title">플리츠 스커트 밴딩</div>
+      <div class="cap-desc">편안한 착용감의 허리 밴딩</div>
+    </div>
+    <div class="img-caption detail-caption" data-fx="0.675" data-fy="0.84">
+      <span class="cap-n">05 · STRIPE LINE</span>
+      <div class="cap-title">더블 라인 포인트</div>
+      <div class="cap-desc">스커트 밑단 스트라이프</div>
+    </div>
+    <div class="img-caption detail-caption" data-fx="0.888" data-fy="0.84">
+      <span class="cap-n">06 · INNER</span>
+      <div class="cap-title">이너 쇼츠 내장</div>
+      <div class="cap-desc">활동성과 편안함을 함께</div>
+    </div>
+  </section>
+
+  <!-- 4. CHECKPOINT -->
+  <section class="panel panel-check">
+    <img class="check-bg" id="checkBg" src="4.check point.png" alt="VOLÉE 체크포인트">
+
+    <div class="check-heading">
+      <span class="tag">CHECK POINT</span>
+      <h2 class="sectiontitle">기능은 기본,<br>스타일은 선택이 아닌 기준.</h2>
+    </div>
+
+    <div class="check-hotspot cp-delay-1" data-fx="0.099" data-fy="0.575" data-fd="0.120" data-pair="1"></div>
+    <div class="check-hotspot cp-delay-2" data-fx="0.2447" data-fy="0.575" data-fd="0.120" data-pair="2"></div>
+    <div class="check-hotspot cp-delay-3" data-fx="0.389" data-fy="0.575" data-fd="0.120" data-pair="3"></div>
+    <div class="check-hotspot cp-delay-4" data-fx="0.5336" data-fy="0.575" data-fd="0.120" data-pair="4"></div>
+
+    <div class="img-caption check-caption cp-delay-1" data-fx="0.099" data-fy="0.70" data-pair="1">
+      <span class="cap-n">01 · WARMTH</span>
+      <div class="cap-title">보온성</div>
+      <div class="cap-desc">쌀쌀한 날씨에도 따뜻하게</div>
+    </div>
+    <div class="img-caption check-caption cp-delay-2" data-fx="0.2447" data-fy="0.70" data-pair="2">
+      <span class="cap-n">02 · STRETCH</span>
+      <div class="cap-title">사방 신축성</div>
+      <div class="cap-desc">움직임을 제한하지 않는 편안함</div>
+    </div>
+    <div class="img-caption check-caption cp-delay-3" data-fx="0.389" data-fy="0.70" data-pair="3">
+      <span class="cap-n">03 · EASY CARE</span>
+      <div class="cap-title">구김·오염 방지</div>
+      <div class="cap-desc">언제나 단정한 핏 유지</div>
+    </div>
+    <div class="img-caption check-caption cp-delay-4" data-fx="0.5336" data-fy="0.70" data-pair="4">
+      <span class="cap-n">04 · SOFT TOUCH</span>
+      <div class="cap-title">부드러운 촉감</div>
+      <div class="cap-desc">안감까지 부드럽게 마감</div>
+    </div>
+  </section>
+
+  <!-- 5. Q&A -->
+  <section class="panel panel-qa">
+    <div class="qa-wrap">
+      <div class="qa-top">
+        <span class="tag">Q&amp;A</span>
+        <h2 class="sectiontitle">자주 묻는 질문</h2>
+      </div>
+
+      <div class="qa-item">
+        <div class="qa-q"><span class="q-mark">Q.</span>사전예약금은 환불되나요?</div>
+        <div class="qa-a"><span class="a-mark">A.</span>예약금(1만원)은 정식 출시 전 언제든 전액 환불 가능합니다. 단, 환불 시 얼리버드 할인 혜택은 함께 소멸됩니다.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="q-mark">Q.</span>배송은 언제 시작되나요?</div>
+        <div class="qa-a"><span class="a-mark">A.</span>정식 출시일 기준 영업일 3~5일 내 순차 발송되며, 사전예약 순서대로 출고됩니다.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="q-mark">Q.</span>사이즈가 안 맞으면 교환 가능한가요?</div>
+        <div class="qa-a"><span class="a-mark">A.</span>수령 후 7일 이내 미착용 제품에 한해 교환이 가능합니다. 구매 전 사이즈 가이드를 꼭 확인해주세요.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="q-mark">Q.</span>얼리버드 할인 단계는 어떻게 확인하나요?</div>
+        <div class="qa-a"><span class="a-mark">A.</span>랜딩페이지 상단의 카운트다운과 잔여 수량으로 실시간 확인 가능하며, 단계가 바뀌면 알림톡으로도 안내드립니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. RESERVATION FORM -->
+  <section class="panel panel-form">
+    <div class="form-wrap">
+      <span class="tag">PRE-ORDER</span>
+      <h2 class="sectiontitle">가장 먼저,<br>가장 좋은 가격으로.</h2>
+      <p class="sectiondesc">사전예약 신청자에게 얼리버드 할인 혜택과 출시 소식을 가장 먼저 안내해드립니다.</p>
+
+      <div class="benefit-row">
+        <div class="benefit-chip active">1차 30%</div>
+        <div class="benefit-chip">2차 20%</div>
+        <div class="benefit-chip">3차 10%</div>
+      </div>
+
+      <form id="reserveForm">
+        <div class="field">
+          <label for="name">이름</label>
+          <input type="text" id="name" placeholder="이름을 입력해주세요" required>
+        </div>
+        <div class="field">
+          <label for="email">이메일</label>
+          <input type="email" id="email" placeholder="example@email.com" required>
+        </div>
+        <button type="submit" class="submitbtn">사전예약 신청하기</button>
+      </form>
+      <div class="formsuccess" id="formSuccess">사전예약 신청이 완료되었습니다. 곧 소식을 전해드릴게요 :)</div>
+      <p class="formnote">신청하신 정보는 사전예약 안내 및 혜택 알림 목적으로만 사용됩니다.</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="color-modal" id="colorModal">
+  <div class="color-modal-backdrop" id="colorModalBackdrop"></div>
+  <div class="color-modal-card">
+    <button type="button" class="color-modal-close" id="colorModalClose" aria-label="닫기">&times;</button>
+    <span class="color-modal-label" id="colorModalLabel">CREAM</span>
+    <img id="colorModalImg" src="" alt="컬러 이미지">
+  </div>
+</div>
+
+<script>
+  const track = document.getElementById('track');
+  const panels = document.querySelectorAll('.panel');
+  const navDots = document.getElementById('navDots');
+  const sectionLabel = document.getElementById('sectionLabel');
+  const labels = ['01 / MAIN','02 / COLLECTION','03 / DETAIL','04 / CHECK POINT','05 / Q&A','06 / RESERVE'];
+
+  panels.forEach((p, i) => {
+    const dot = document.createElement('button');
+    if(i === 0) dot.classList.add('active');
+    dot.addEventListener('click', () => goTo(i));
+    navDots.appendChild(dot);
+  });
+  const dots = navDots.querySelectorAll('button');
+
+  function goTo(i){
+    track.scrollTo({ left: i * window.innerWidth, behavior:'smooth' });
+  }
+
+  function updateUI(){
+    const idx = Math.round(track.scrollLeft / window.innerWidth);
+    dots.forEach((d,i) => d.classList.toggle('active', i === idx));
+    sectionLabel.textContent = labels[idx] || '';
+  }
+
+  track.addEventListener('scroll', () => {
+    window.requestAnimationFrame(updateUI);
+  });
+
+  // map vertical wheel to horizontal scroll
+  track.addEventListener('wheel', (e) => {
+    if(Math.abs(e.deltaY) > Math.abs(e.deltaX)){
+      e.preventDefault();
+      track.scrollLeft += e.deltaY;
+    }
+  }, { passive:false });
+
+  document.getElementById('prevBtn').addEventListener('click', () => {
+    const idx = Math.round(track.scrollLeft / window.innerWidth);
+    goTo(Math.max(0, idx - 1));
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    const idx = Math.round(track.scrollLeft / window.innerWidth);
+    goTo(Math.min(panels.length - 1, idx + 1));
+  });
+
+  window.addEventListener('keydown', (e) => {
+    const idx = Math.round(track.scrollLeft / window.innerWidth);
+    if(e.key === 'ArrowRight') goTo(Math.min(panels.length - 1, idx + 1));
+    if(e.key === 'ArrowLeft') goTo(Math.max(0, idx - 1));
+  });
+
+  window.addEventListener('resize', () => {
+    const idx = Math.round(track.scrollLeft / window.innerWidth);
+    goTo(idx);
+  });
+
+  document.getElementById('reserveForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    e.target.style.display = 'none';
+    document.getElementById('formSuccess').style.display = 'block';
+  });
+
+  updateUI();
+
+  // position captions/hotspots over exact spots on a full-bleed bg image,
+  // accounting for object-fit:cover cropping at any viewport ratio
+  function setupImageCaptions(imgId, captionSelector){
+    const bg = document.getElementById(imgId);
+    const captions = document.querySelectorAll(captionSelector);
+    function position(){
+      const container = bg.parentElement;
+      const cw = container.clientWidth, ch = container.clientHeight;
+      const iw = bg.naturalWidth, ih = bg.naturalHeight;
+      if(!iw || !ih) return;
+      const scale = Math.max(cw / iw, ch / ih);
+      const offX = (cw - iw * scale) / 2;
+      const offY = (ch - ih * scale) / 2;
+      captions.forEach(el => {
+        const fx = parseFloat(el.dataset.fx), fy = parseFloat(el.dataset.fy);
+        el.style.left = (offX + fx * iw * scale) + 'px';
+        el.style.top = (offY + fy * ih * scale) + 'px';
+        if(el.dataset.fd){
+          const d = parseFloat(el.dataset.fd) * ih * scale;
+          el.style.width = d + 'px';
+          el.style.height = d + 'px';
+        }
+      });
+    }
+    if(bg.complete) position();
+    bg.addEventListener('load', position);
+    window.addEventListener('resize', position);
+  }
+  setupImageCaptions('detailBg', '.detail-caption');
+  setupImageCaptions('checkBg', '.check-caption');
+  setupImageCaptions('checkBg', '.check-hotspot');
+
+  // checkpoint: pair hotspot <-> caption hover highlight
+  document.querySelectorAll('.check-hotspot, .check-caption').forEach(el => {
+    const pairSelector = `[data-pair="${el.dataset.pair}"]`;
+    el.addEventListener('mouseenter', () => {
+      document.querySelectorAll(pairSelector).forEach(p => p.classList.add('active'));
+    });
+    el.addEventListener('mouseleave', () => {
+      document.querySelectorAll(pairSelector).forEach(p => p.classList.remove('active'));
+    });
+  });
+
+  // checkpoint: staggered entrance when the section scrolls into view
+  const checkPanel = document.querySelector('.panel-check');
+  const checkObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      checkPanel.classList.toggle('cp-visible', entry.isIntersecting);
+    });
+  }, { threshold: 0.4 });
+  checkObserver.observe(checkPanel);
+
+  // color swatch popup
+  const colorModal = document.getElementById('colorModal');
+  const colorModalImg = document.getElementById('colorModalImg');
+  const colorModalLabel = document.getElementById('colorModalLabel');
+
+  function openColorModal(src, label){
+    colorModalImg.src = src;
+    colorModalImg.alt = label + ' 컬러 이미지';
+    colorModalLabel.textContent = label;
+    colorModal.classList.add('open');
+  }
+  function closeColorModal(){
+    colorModal.classList.remove('open');
+  }
+
+  document.querySelectorAll('.swatch[data-color]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openColorModal(btn.dataset.color, btn.dataset.label);
+    });
+  });
+  document.getElementById('colorModalClose').addEventListener('click', closeColorModal);
+  document.getElementById('colorModalBackdrop').addEventListener('click', closeColorModal);
+  window.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape') closeColorModal();
+  });
+</script>
+
+</body>
+</html>
